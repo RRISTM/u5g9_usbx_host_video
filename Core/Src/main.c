@@ -42,6 +42,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+LTDC_HandleTypeDef hltdc;
+
 HCD_HandleTypeDef hhcd_USB_OTG_HS;
 
 /* USER CODE BEGIN PV */
@@ -52,6 +54,7 @@ HCD_HandleTypeDef hhcd_USB_OTG_HS;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_USB_OTG_HS_HCD_Init(void);
+static void MX_LTDC_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -92,6 +95,7 @@ int main(void)
   MX_GPIO_Init();
   MX_USB_OTG_HS_HCD_Init();
   MX_USBX_Host_Init();
+  MX_LTDC_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -160,6 +164,88 @@ void SystemClock_Config(void)
 }
 
 /**
+  * @brief LTDC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_LTDC_Init(void)
+{
+
+  /* USER CODE BEGIN LTDC_Init 0 */
+
+  /* USER CODE END LTDC_Init 0 */
+
+  LTDC_LayerCfgTypeDef pLayerCfg = {0};
+  LTDC_LayerCfgTypeDef pLayerCfg1 = {0};
+
+  /* USER CODE BEGIN LTDC_Init 1 */
+
+  /* USER CODE END LTDC_Init 1 */
+  hltdc.Instance = LTDC;
+  hltdc.Init.HSPolarity = LTDC_HSPOLARITY_AL;
+  hltdc.Init.VSPolarity = LTDC_VSPOLARITY_AL;
+  hltdc.Init.DEPolarity = LTDC_DEPOLARITY_AL;
+  hltdc.Init.PCPolarity = LTDC_PCPOLARITY_IPC;
+  hltdc.Init.HorizontalSync = 3;
+  hltdc.Init.VerticalSync = 3;
+  hltdc.Init.AccumulatedHBP = 11;
+  hltdc.Init.AccumulatedVBP = 11;
+  hltdc.Init.AccumulatedActiveW = 811;
+  hltdc.Init.AccumulatedActiveH = 491;
+  hltdc.Init.TotalWidth = 819;
+  hltdc.Init.TotalHeigh = 499;
+  hltdc.Init.Backcolor.Blue = 0;
+  hltdc.Init.Backcolor.Green = 0;
+  hltdc.Init.Backcolor.Red = 0;
+  if (HAL_LTDC_Init(&hltdc) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  pLayerCfg.WindowX0 = 0;
+  pLayerCfg.WindowX1 = 0;
+  pLayerCfg.WindowY0 = 0;
+  pLayerCfg.WindowY1 = 0;
+  pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_ARGB8888;
+  pLayerCfg.Alpha = 0;
+  pLayerCfg.Alpha0 = 0;
+  pLayerCfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_CA;
+  pLayerCfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_CA;
+  pLayerCfg.FBStartAdress = 0;
+  pLayerCfg.ImageWidth = 0;
+  pLayerCfg.ImageHeight = 0;
+  pLayerCfg.Backcolor.Blue = 0;
+  pLayerCfg.Backcolor.Green = 0;
+  pLayerCfg.Backcolor.Red = 0;
+  if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg, 0) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  pLayerCfg1.WindowX0 = 0;
+  pLayerCfg1.WindowX1 = 0;
+  pLayerCfg1.WindowY0 = 0;
+  pLayerCfg1.WindowY1 = 0;
+  pLayerCfg1.PixelFormat = LTDC_PIXEL_FORMAT_ARGB8888;
+  pLayerCfg1.Alpha = 0;
+  pLayerCfg1.Alpha0 = 0;
+  pLayerCfg1.BlendingFactor1 = LTDC_BLENDING_FACTOR1_CA;
+  pLayerCfg1.BlendingFactor2 = LTDC_BLENDING_FACTOR2_CA;
+  pLayerCfg1.FBStartAdress = 0;
+  pLayerCfg1.ImageWidth = 0;
+  pLayerCfg1.ImageHeight = 0;
+  pLayerCfg1.Backcolor.Blue = 0;
+  pLayerCfg1.Backcolor.Green = 0;
+  pLayerCfg1.Backcolor.Red = 0;
+  if (HAL_LTDC_ConfigLayer(&hltdc, &pLayerCfg1, 1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN LTDC_Init 2 */
+
+  /* USER CODE END LTDC_Init 2 */
+
+}
+
+/**
   * @brief USB_OTG_HS Initialization Function
   * @param None
   * @retval None
@@ -199,12 +285,34 @@ static void MX_USB_OTG_HS_HCD_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
 /* USER CODE BEGIN MX_GPIO_Init_1 */
 /* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOE_CLK_ENABLE();
   __HAL_RCC_GPIOH_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOE, GPIO_PIN_4|GPIO_PIN_6, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : PE4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PE6 */
+  GPIO_InitStruct.Pin = GPIO_PIN_6;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
