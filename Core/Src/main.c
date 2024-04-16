@@ -105,6 +105,7 @@ int main(void)
   while (1)
   {
     ux_system_tasks_run();
+    video_read();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -202,17 +203,17 @@ static void MX_LTDC_Init(void)
     Error_Handler();
   }
   pLayerCfg.WindowX0 = 0;
-  pLayerCfg.WindowX1 = 640;
+  pLayerCfg.WindowX1 = 320;
   pLayerCfg.WindowY0 = 0;
-  pLayerCfg.WindowY1 = 480;
+  pLayerCfg.WindowY1 = 240;
   pLayerCfg.PixelFormat = LTDC_PIXEL_FORMAT_RGB565;
   pLayerCfg.Alpha = 255;
   pLayerCfg.Alpha0 = 255;
   pLayerCfg.BlendingFactor1 = LTDC_BLENDING_FACTOR1_CA;
   pLayerCfg.BlendingFactor2 = LTDC_BLENDING_FACTOR2_CA;
   pLayerCfg.FBStartAdress = 0x300D0000;
-  pLayerCfg.ImageWidth = 1280;
-  pLayerCfg.ImageHeight = 480;
+  pLayerCfg.ImageWidth = 320;
+  pLayerCfg.ImageHeight = 240;
   pLayerCfg.Backcolor.Blue = 0;
   pLayerCfg.Backcolor.Green = 255;
   pLayerCfg.Backcolor.Red = 0;

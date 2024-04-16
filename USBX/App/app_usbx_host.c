@@ -53,13 +53,18 @@ __ALIGN_BEGIN static UCHAR ux_host_byte_pool_buffer[UX_HOST_APP_MEM_POOL_SIZE] _
 /* USER CODE BEGIN PV */
 extern HCD_HandleTypeDef hhcd_USB_OTG_HS;
 UX_HOST_CLASS_VIDEO *video=NULL;
+UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST video_transfer_request;
+uint32_t videoReadDone=0;
+uint32_t videoConnected=0;
+uint32_t videoLine=0;
+uint8_t buffer[2048];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 static UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *current_instance);
 static VOID ux_host_error_callback(UINT system_level, UINT system_context, UINT error_code);
 /* USER CODE BEGIN PFP */
-
+void video_transfer_complete(UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST* video_transfer);
 /* USER CODE END PFP */
 
 /**
@@ -159,6 +164,8 @@ ULONG _ux_utility_time_get(VOID)
   return time_tick;
 }
 
+
+
 /**
   * @brief  ux_host_event_callback
   *         This callback is invoked to notify application of instance changes.
@@ -174,6 +181,11 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
   /* USER CODE BEGIN ux_host_event_callback0 */
   UX_PARAMETER_NOT_USED(current_class);
   UX_PARAMETER_NOT_USED(current_instance);
+
+  // video_transfer_request.ux_host_class_video_transfer_request_data_pointer=0x300D0000;//data buffer
+  // video_transfer_request.ux_host_class_video_transfer_request_requested_length= 320*240*2;//640*480*2
+  // video_transfer_request.ux_host_class_video_transfer_request_completion_function=&video_transfer_complete;
+
   /* USER CODE END ux_host_event_callback0 */
 
   switch (event)
@@ -187,7 +199,11 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
         {
           /* Get current video Instance */
           video = (UX_HOST_CLASS_VIDEO *)current_instance;
-          ux_host_class_video_frame_parameters_set(video,0x4,640,480,333333);// 0x4 --VS_UNCOMPRESSED
+          ux_host_class_video_frame_parameters_set(video,0x4,320,240,2000000);// 0x4 --VS_UNCOMPRESSED
+          ux_host_class_video_start(video);
+          videoLine=0;
+          videoConnected=1;
+          videoReadDone=1;
         }
       }
       /* USER CODE END UX_DEVICE_INSERTION */
@@ -199,7 +215,9 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
       /* USER CODE BEGIN UX_DEVICE_REMOVAL */
       if (current_class -> ux_host_class_entry_function == ux_host_class_video_entry)
       {
-
+          videoLine=0;
+          videoConnected=0;
+          videoReadDone=0;
           /* Get current video Instance */
           video = NULL;
         
@@ -288,5 +306,30 @@ VOID ux_host_error_callback(UINT system_level, UINT system_context, UINT error_c
 }
 
 /* USER CODE BEGIN 1 */
+// uint32_t videoReadDone=0;
+// uint32_t videoConnected=0;
 
+void video_transfer_complete(UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST* video_transfer){
+	videoReadDone=1;
+  uint8_t currentVideoLine =video_transfer->ux_host_class_video_transfer_request_actual_length;
+  if(currentVideoLine>12){
+    currentVideoLine-=12;
+    memcpy((uint8_t*)(0x300D0000+videoLine),&buffer[12],currentVideoLine);
+    videoLine+=currentVideoLine;
+    if(videoLine>=(320*240*2)){
+      videoLine=0;
+    }
+  }
+}
+
+
+void video_read(){
+	  if(videoReadDone==1 && videoConnected==1){
+
+      video_transfer_request.ux_host_class_video_transfer_request_data_pointer=buffer;//data buffer
+      video_transfer_request.ux_host_class_video_transfer_request_requested_length= 320*240*2;//640*480*2
+      video_transfer_request.ux_host_class_video_transfer_request_completion_function=&video_transfer_complete;
+      ux_host_class_video_read(video,&video_transfer_request );
+    }
+}
 /* USER CODE END 1 */

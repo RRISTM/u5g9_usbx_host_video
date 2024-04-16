@@ -56,7 +56,7 @@ extern "C" {
 UINT MX_USBX_Host_Init(VOID);
 
 /* USER CODE BEGIN EFP */
-
+void video_read(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
