@@ -57,6 +57,7 @@ UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST video_transfer_request;
 uint32_t videoReadDone=0;
 uint32_t videoConnected=0;
 uint32_t videoLine=0;
+uint32_t frameTimestamp=0;
 uint8_t buffer[2048];
 /* USER CODE END PV */
 
@@ -314,6 +315,11 @@ void video_transfer_complete(UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST* video_transfe
   uint8_t currentVideoLine =video_transfer->ux_host_class_video_transfer_request_actual_length;
   if(currentVideoLine>12){
     currentVideoLine-=12;
+    uint32_t newTimestamp=*(uint32_t*)&buffer[2];
+    if(frameTimestamp!=newTimestamp){
+      frameTimestamp=newTimestamp;
+      videoLine=0;
+    }
     memcpy((uint8_t*)(0x300D0000+videoLine),&buffer[12],currentVideoLine);
     videoLine+=currentVideoLine;
     if(videoLine>=(320*240*2)){
