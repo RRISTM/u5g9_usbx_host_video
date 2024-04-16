@@ -68,7 +68,7 @@ static VOID ux_host_error_callback(UINT system_level, UINT system_context, UINT 
 /* USER CODE BEGIN PFP */
 void video_transfer_complete(UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST* video_transfer);
 uint32_t yuvToRgb(uint8_t* in,uint8_t* out,uint32_t length);
-void oneYuvToRgbConversion(int8_t y,int8_t u,int8_t v,uint8_t* rOut,uint8_t* gOut,uint8_t* bOut);
+void oneYuvToRgbConversion(uint8_t y,uint8_t u,uint8_t v,uint8_t* rOut,uint8_t* gOut,uint8_t* bOut);
 /* USER CODE END PFP */
 
 /**
@@ -201,7 +201,7 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
         {
           /* Get current video Instance */
           video = (UX_HOST_CLASS_VIDEO *)current_instance;
-          ux_host_class_video_frame_parameters_set(video,0x4,320,240,2000000);// 0x4 --VS_UNCOMPRESSED
+          ux_host_class_video_frame_parameters_set(video,0x4,320,240,2000000  );// 0x4 --VS_UNCOMPRESSED 2000000
           ux_host_class_video_start(video);
           videoLine=0;
           videoConnected=1;
@@ -310,22 +310,25 @@ VOID ux_host_error_callback(UINT system_level, UINT system_context, UINT error_c
 /* USER CODE BEGIN 1 */
 // uint32_t videoReadDone=0;
 // uint32_t videoConnected=0;
-
+uint32_t maxVideoLine=0;
 void video_transfer_complete(UX_HOST_CLASS_VIDEO_TRANSFER_REQUEST* video_transfer){
 	videoReadDone=1;
+  maxVideoLine++;
   uint8_t currentVideoLine =video_transfer->ux_host_class_video_transfer_request_actual_length;
   if(currentVideoLine>12){
     currentVideoLine-=12;
     uint32_t newTimestamp=*(uint32_t*)&buffer[2];
-    if(frameTimestamp!=newTimestamp){
-      frameTimestamp=newTimestamp;
-      videoLine=0;
-    }
+//    if(frameTimestamp!=newTimestamp){
+//      frameTimestamp=newTimestamp;
+//      videoLine=0;
+//      maxVideoLine=0;
+//    }
     // memcpy((uint8_t*)(0x300D0000+videoLine),&buffer[12],currentVideoLine);
     videoLine+= yuvToRgb(&buffer[12],(uint8_t*)(0x300D0000+videoLine),currentVideoLine);
     // videoLine+=currentVideoLine;
-    if(videoLine>=(320*240*2)){
+    if(videoLine>=(320*240*3)){
       videoLine=0;
+      maxVideoLine=0;
     }
   }
 }
@@ -365,19 +368,25 @@ uint32_t yuvToRgb(uint8_t* in,uint8_t* out,uint32_t length){
     uint8_t y2 = in[i+2];
     uint8_t v = in[i+3];
     oneYuvToRgbConversion(y1,u,v,&r,&g,&b);
-    pixel=(r>>3) | ((g>>2)<<5) | ((b>>3)<<11); 
-    out[outCounter++]=pixel&0xFF;
-    out[outCounter++]=pixel>>8;
+    // pixel=(r>>3) | ((g>>2)<<5) | ((b>>3)<<11); 
+    // out[outCounter++]=pixel&0xFF;
+    // out[outCounter++]=pixel>>8;
+    out[outCounter++]=b;
+    out[outCounter++]=g;
+    out[outCounter++]=r;
 
     oneYuvToRgbConversion(y2,u,v,&r,&g,&b);
-    pixel=(r>>3) | ((g>>2)<<5) | ((b>>3)<<11); 
-    out[outCounter++]=pixel&0xFF;
-    out[outCounter++]=pixel>>8;
+    // pixel=(r>>3) | ((g>>2)<<5) | ((b>>3)<<11); 
+    // out[outCounter++]=pixel&0xFF;
+    // out[outCounter++]=pixel>>8;
+    out[outCounter++]=b;
+    out[outCounter++]=g;
+    out[outCounter++]=r;
   }
   return outCounter;
 }
 
-void oneYuvToRgbConversion(int8_t y, int8_t u, int8_t v, uint8_t *rOut, uint8_t *gOut, uint8_t *bOut)
+void oneYuvToRgbConversion(uint8_t y, uint8_t u, uint8_t v, uint8_t *rOut, uint8_t *gOut, uint8_t *bOut)
 {
   // Convert, cast to signed byte is important!
   // uint8_t r = y + (1.403 * (int8_t)v);
@@ -387,11 +396,23 @@ void oneYuvToRgbConversion(int8_t y, int8_t u, int8_t v, uint8_t *rOut, uint8_t 
   // float r = y + (1.403 * (float)v);
   // float g = y - (0.344 * (float)u) - (0.714 * (float)v);
   // float b = y + (1.770 * (float)u);
-
 //bm709
-  float r = y + (1.28033 * (float)v);
-  float g = y - (0.21482 * (float)u) - (0.38059 * (float)v);
-  float b = y + (2.12798 * (float)u);
+
+  const int32_t K1= 1.28033f * (1<<16);
+  const int32_t K2= 0.21482f * (1<<16);
+  const int32_t K3= 0.38059f * (1<<16);
+  const int32_t K4= 2.12798f * (1<<16);
+
+  int8_t uf = u-128;
+  int8_t vf = v-128;
+
+  int32_t r = y + ((K1 *vf) >>16);
+  int32_t g = y - ((K2*vf)>>16) - ((K3*uf)>>16);
+  int32_t b = y + ((K4*uf)>>16);
+
+  // float r = y + (1.28033 * ((int16_t)v-128));
+  // float g = y - (0.21482 * ((int16_t)u-128)) - (0.38059 * ((int16_t)v-128));
+  // float b = y + (2.12798 * ((int16_t)u-128));
 
 	// float r = 1.164*((float)y - 16) + 2.018*((float)u - 128);
 
