@@ -30,7 +30,8 @@ extern "C" {
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "ux_host_class_video.h"
+#include "ux_hcd_stm32.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -39,8 +40,8 @@ extern "C" {
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
-#define UX_HOST_APP_MEM_POOL_SIZE  16384
-#define USBX_HOST_MEMORY_STACK_SIZE     12288
+#define UX_HOST_APP_MEM_POOL_SIZE  65536
+#define USBX_HOST_MEMORY_STACK_SIZE     49152
 
 /* USER CODE BEGIN EC */
 

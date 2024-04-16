@@ -103,7 +103,7 @@ void HAL_LTDC_MspInit(LTDC_HandleTypeDef* hltdc)
     PeriphClkInit.PLL2.PLL2Q = 2;
     PeriphClkInit.PLL2.PLL2R = 21;
     PeriphClkInit.PLL2.PLL2RGE = RCC_PLLVCIRANGE_0;
-    PeriphClkInit.PLL2.PLL2FRACN = 0.0;
+    PeriphClkInit.PLL2.PLL2FRACN = 0;
     PeriphClkInit.PLL2.PLL2ClockOut = RCC_PLL2_DIVR;
     if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
     {
@@ -277,7 +277,7 @@ void HAL_HCD_MspInit(HCD_HandleTypeDef* hhcd)
   if(hhcd->Instance==USB_OTG_HS)
   {
   /* USER CODE BEGIN USB_OTG_HS_MspInit 0 */
-
+   __HAL_RCC_SYSCFG_CLK_ENABLE();
   /* USER CODE END USB_OTG_HS_MspInit 0 */
 
   /** Initializes the peripherals clock

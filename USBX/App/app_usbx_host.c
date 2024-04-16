@@ -51,7 +51,8 @@
 #endif
 __ALIGN_BEGIN static UCHAR ux_host_byte_pool_buffer[UX_HOST_APP_MEM_POOL_SIZE] __ALIGN_END;
 /* USER CODE BEGIN PV */
-
+extern HCD_HandleTypeDef hhcd_USB_OTG_HS;
+UX_HOST_CLASS_VIDEO *video=NULL;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -97,7 +98,17 @@ UINT MX_USBX_Host_Init(VOID)
   ux_utility_error_callback_register(&ux_host_error_callback);
 
   /* USER CODE BEGIN MX_USBX_Host_Init1 */
+  /* Initialize the host cdc acm class */
+  if ((ux_host_stack_class_register(_ux_system_host_class_video_name, ux_host_class_video_entry)) != UX_SUCCESS)
+  {
+    /* USER CODE BEGIN USBX_HOST_CDC_ACM_REGISTER_ERROR */
+    return UX_ERROR;
+    /* USER CODE END USBX_HOST_CDC_ACM_REGISTER_ERROR */
+  }
+  /* Initialize the host controller driver */
+  ux_host_stack_hcd_register(_ux_system_host_hcd_stm32_name,  _ux_hcd_stm32_initialize, (ULONG)USB_OTG_HS,(ULONG)&hhcd_USB_OTG_HS);
 
+  HAL_HCD_Start(&hhcd_USB_OTG_HS);
   /* USER CODE END MX_USBX_Host_Init1 */
 
   return ret;
@@ -112,6 +123,7 @@ UINT MX_USBX_Host_Init(VOID)
 ALIGN_TYPE _ux_utility_interrupt_disable(VOID)
 {
   /* USER CODE BEGIN _ux_utility_interrupt_disable */
+  __set_PRIMASK(1);
   return(0);
   /* USER CODE END _ux_utility_interrupt_disable */
 }
@@ -125,6 +137,7 @@ ALIGN_TYPE _ux_utility_interrupt_disable(VOID)
 VOID _ux_utility_interrupt_restore(ALIGN_TYPE flags)
 {
   /* USER CODE BEGIN _ux_utility_interrupt_restore */
+  __set_PRIMASK(0);
   UX_PARAMETER_NOT_USED(flags);
   /* USER CODE END _ux_utility_interrupt_restore */
 }
@@ -140,7 +153,7 @@ ULONG _ux_utility_time_get(VOID)
   ULONG time_tick = 0U;
 
   /* USER CODE BEGIN _ux_utility_time_get */
-
+  time_tick = HAL_GetTick();
   /* USER CODE END _ux_utility_time_get */
 
   return time_tick;
@@ -168,7 +181,15 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
     case UX_DEVICE_INSERTION:
 
       /* USER CODE BEGIN UX_DEVICE_INSERTION */
-
+      if (current_class -> ux_host_class_entry_function == ux_host_class_video_entry)
+      {
+        if (video == UX_NULL)
+        {
+          /* Get current video Instance */
+          video = (UX_HOST_CLASS_VIDEO *)current_instance;
+          ux_host_class_video_frame_parameters_set(video,0x4,640,480,333333);// 0x4 --VS_UNCOMPRESSED
+        }
+      }
       /* USER CODE END UX_DEVICE_INSERTION */
 
       break;
@@ -176,7 +197,13 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
     case UX_DEVICE_REMOVAL:
 
       /* USER CODE BEGIN UX_DEVICE_REMOVAL */
+      if (current_class -> ux_host_class_entry_function == ux_host_class_video_entry)
+      {
 
+          /* Get current video Instance */
+          video = NULL;
+        
+      }
       /* USER CODE END UX_DEVICE_REMOVAL */
 
       break;
@@ -184,7 +211,7 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
     case UX_DEVICE_CONNECTION:
 
       /* USER CODE BEGIN UX_DEVICE_CONNECTION */
-
+      __NOP();
       /* USER CODE END UX_DEVICE_CONNECTION */
 
       break;
@@ -192,7 +219,7 @@ UINT ux_host_event_callback(ULONG event, UX_HOST_CLASS *current_class, VOID *cur
     case UX_DEVICE_DISCONNECTION:
 
       /* USER CODE BEGIN UX_DEVICE_DISCONNECTION */
-
+      __NOP();
       /* USER CODE END UX_DEVICE_DISCONNECTION */
 
       break;
